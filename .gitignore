@@ -1,0 +1,6 @@
+.build/
+.swiftpm/
+Output/*.png
+Output/**/*.png
+RawScreenshots/*.png
+.DS_Store

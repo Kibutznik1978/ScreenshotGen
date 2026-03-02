@@ -1,0 +1,27 @@
+{
+  "gradientTopColor": "#337AF5",
+  "gradientBottomColor": "#245CCC",
+  "textColor": "#FFFFFF",
+  "supportTextOpacity": 0.8,
+  "devices": ["iphone-6.7", "ipad-12.9"],
+  "screenshots": [
+    {
+      "id": "01",
+      "rawImage": "01-dashboard.png",
+      "caption": "Know exactly where\nyou stand",
+      "supportText": "Track total and night hours toward your state's goal"
+    },
+    {
+      "id": "02",
+      "rawImage": "02-active-session.png",
+      "caption": "One tap to start\nlogging",
+      "supportText": "Automatic day and night detection — no guessing"
+    },
+    {
+      "id": "03",
+      "rawImage": "03-feature.png",
+      "caption": "Your headline\ngoes here",
+      "supportText": "A subtitle explaining the feature"
+    }
+  ]
+}
