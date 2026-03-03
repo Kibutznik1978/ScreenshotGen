@@ -4,12 +4,9 @@ import ScreenshotGenCore
 
 @main
 struct ScreenshotGenUIApp: App {
-    @State private var state = ProjectState()
+    @State private var store = ProjectStore()
 
     init() {
-        // When running as a bare executable (not a .app bundle),
-        // macOS won't activate the app automatically — keyboard input won't work.
-        // In a proper .app bundle this is handled automatically.
         if !Bundle.main.bundlePath.hasSuffix(".app") {
             NSApplication.shared.setActivationPolicy(.regular)
             NSApplication.shared.activate(ignoringOtherApps: true)
@@ -19,11 +16,8 @@ struct ScreenshotGenUIApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(state)
+                .environment(store)
                 .frame(minWidth: 900, minHeight: 600)
-                .onAppear {
-                    state.loadIfNeeded()
-                }
         }
         .windowResizability(.contentMinSize)
     }

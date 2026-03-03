@@ -1,21 +1,25 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 import ScreenshotGenCore
 
 struct SlotListView: View {
-    @Environment(ProjectState.self) private var state
+    @Environment(ProjectStore.self) private var store
 
     var body: some View {
-        @Bindable var state = state
+        @Bindable var store = store
 
-        List(selection: $state.selectedSlotIndex) {
-            if let config = state.config {
+        List(selection: $store.selectedSlotIndex) {
+            if let config = store.config {
                 ForEach(Array(config.screenshots.enumerated()), id: \.element.id) { index, entry in
-                    SlotRow(entry: entry, exists: state.rawImageExists(for: entry), thumbnail: state.thumbnail(for: entry))
+                    SlotRow(entry: entry, exists: store.rawImageExists(for: entry), thumbnail: store.thumbnail(for: entry))
                         .tag(index)
+                        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+                            handleDrop(providers: providers, slotIndex: index)
+                        }
                 }
                 .onMove { source, destination in
-                    state.moveSlot(from: source, to: destination)
+                    store.moveSlot(from: source, to: destination)
                 }
             }
         }
@@ -25,7 +29,7 @@ struct SlotListView: View {
                 Divider()
                 HStack(spacing: 0) {
                     Button {
-                        state.addSlot()
+                        store.addSlot()
                     } label: {
                         Image(systemName: "plus")
                             .frame(width: 28, height: 22)
@@ -34,15 +38,15 @@ struct SlotListView: View {
                     .help("Add screenshot slot")
 
                     Button {
-                        if let index = state.selectedSlotIndex {
-                            state.removeSlot(at: index)
+                        if let index = store.selectedSlotIndex {
+                            store.removeSlot(at: index)
                         }
                     } label: {
                         Image(systemName: "minus")
                             .frame(width: 28, height: 22)
                     }
                     .buttonStyle(.borderless)
-                    .disabled(state.selectedSlotIndex == nil)
+                    .disabled(store.selectedSlotIndex == nil)
                     .help("Remove selected slot")
 
                     Spacer()
@@ -53,6 +57,20 @@ struct SlotListView: View {
             .background(.bar)
         }
         .navigationTitle("Screenshots")
+    }
+
+    private func handleDrop(providers: [NSItemProvider], slotIndex: Int) -> Bool {
+        guard let provider = providers.first else { return false }
+        provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { data, _ in
+            guard let data = data as? Data,
+                  let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
+            let imageExtensions: Set<String> = ["png", "jpg", "jpeg", "heic"]
+            guard imageExtensions.contains(url.pathExtension.lowercased()) else { return }
+            Task { @MainActor in
+                store.importImage(from: url, toSlotIndex: slotIndex)
+            }
+        }
+        return true
     }
 }
 

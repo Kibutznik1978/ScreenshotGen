@@ -8,73 +8,49 @@ enum BottomTab: String, CaseIterable {
 }
 
 struct ContentView: View {
-    @Environment(ProjectState.self) private var state
+    @Environment(ProjectStore.self) private var store
     @State private var showImportSheet = false
     @State private var bottomTab: BottomTab = .preview
 
     var body: some View {
-        Group {
-            if state.config != nil {
-                NavigationSplitView {
-                    SlotListView()
-                        .navigationSplitViewColumnWidth(min: 250, ideal: 300)
-                } detail: {
-                    VStack(spacing: 0) {
-                        if state.selectedSlotIndex != nil {
-                            EditorPanel()
-                        } else {
-                            Text("Select a screenshot slot")
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-
-                        BottomPanel(tab: $bottomTab)
-                            .environment(state)
-                    }
-                }
+        NavigationSplitView {
+            ProjectListView()
+                .navigationSplitViewColumnWidth(min: 160, ideal: 180)
+        } content: {
+            if store.selectedProject != nil {
+                SlotListView()
+                    .navigationSplitViewColumnWidth(min: 220, ideal: 260)
             } else {
-                VStack(spacing: 16) {
-                    Image(systemName: "photo.on.rectangle.angled")
-                        .font(.system(size: 48))
+                Text("Select a project")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        } detail: {
+            VStack(spacing: 0) {
+                if store.selectedSlotIndex != nil {
+                    EditorPanel()
+                } else {
+                    Text("Select a screenshot slot")
                         .foregroundStyle(.secondary)
-                    Text("No project loaded")
-                        .font(.title2)
-                    Text("Select a project folder containing config.json")
-                        .foregroundStyle(.secondary)
-                    Button("Select Project Folder...") {
-                        state.selectProjectFolder()
-                    }
-                    .buttonStyle(.borderedProminent)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                BottomPanel(tab: $bottomTab)
+                    .environment(store)
             }
         }
         .toolbar {
-            ToolbarItemGroup(placement: .navigation) {
-                Button {
-                    state.selectProjectFolder()
-                } label: {
-                    Label("Open Project", systemImage: "folder")
-                }
-                .help("Open project folder")
-            }
-
             ToolbarItemGroup(placement: .primaryAction) {
-                if state.config != nil {
+                if store.config != nil {
                     Button("Import Images") {
                         showImportSheet = true
                     }
                     .help("Import screenshot images")
 
-                    Button("Save") {
-                        state.saveConfig()
-                    }
-                    .help("Save config.json")
-
                     Button {
-                        state.runGenerate()
+                        store.runGenerate()
                     } label: {
-                        if state.isGenerating {
+                        if store.isGenerating {
                             ProgressView()
                                 .controlSize(.small)
                         } else {
@@ -83,27 +59,33 @@ struct ContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.green)
-                    .disabled(state.isGenerating)
+                    .disabled(store.isGenerating)
                     .help("Generate App Store screenshots")
                 }
             }
         }
         .sheet(isPresented: $showImportSheet) {
             ImportView()
-                .environment(state)
+                .environment(store)
         }
         .alert("Error", isPresented: .init(
-            get: { state.errorMessage != nil },
-            set: { if !$0 { state.errorMessage = nil } }
+            get: { store.errorMessage != nil },
+            set: { if !$0 { store.errorMessage = nil } }
         )) {
-            Button("OK") { state.errorMessage = nil }
+            Button("OK") { store.errorMessage = nil }
         } message: {
-            Text(state.errorMessage ?? "")
+            Text(store.errorMessage ?? "")
         }
-        .onChange(of: state.isGenerating) { _, isGenerating in
+        .onChange(of: store.isGenerating) { _, isGenerating in
             if isGenerating {
                 bottomTab = .log
             }
+        }
+        .onChange(of: store.config) {
+            store.scheduleSave()
+        }
+        .onChange(of: store.selectedProjectId) {
+            store.persistSelection()
         }
     }
 }
@@ -111,7 +93,7 @@ struct ContentView: View {
 // MARK: - Bottom Panel
 
 struct BottomPanel: View {
-    @Environment(ProjectState.self) private var state
+    @Environment(ProjectStore.self) private var store
     @Binding var tab: BottomTab
 
     var body: some View {
@@ -130,10 +112,10 @@ struct BottomPanel: View {
             switch tab {
             case .preview:
                 PreviewPanel()
-                    .environment(state)
+                    .environment(store)
             case .log:
                 LogPanelContent()
-                    .environment(state)
+                    .environment(store)
             }
         }
         .frame(height: 220)
@@ -144,21 +126,21 @@ struct BottomPanel: View {
 // MARK: - Preview Panel
 
 struct PreviewPanel: View {
-    @Environment(ProjectState.self) private var state
+    @Environment(ProjectStore.self) private var store
     @State private var showFullPreview = false
 
     var body: some View {
-        @Bindable var state = state
+        @Bindable var store = store
 
         Group {
-            if let config = state.config,
-               let slotIndex = state.selectedSlotIndex,
+            if let config = store.config,
+               let slotIndex = store.selectedSlotIndex,
                slotIndex < config.screenshots.count,
-               let spec = state.previewSpec,
-               let rawURL = state.rawImageURL(for: config.screenshots[slotIndex]),
+               let spec = store.previewSpec,
+               let rawURL = store.rawImageURL(for: config.screenshots[slotIndex]),
                let screenshot = NSImage(contentsOf: rawURL) {
                 HStack(spacing: 12) {
-                    // Scaled preview — click to enlarge
+                    // Scaled preview -- click to enlarge
                     GeometryReader { geo in
                         let entry = config.screenshots[slotIndex]
                         ScreenshotView(entry: entry, screenshot: screenshot, spec: spec, config: config)
@@ -177,7 +159,7 @@ struct PreviewPanel: View {
                         Text("Preview Device")
                             .font(.caption.bold())
                         Picker("Device", selection: previewDeviceBinding) {
-                            ForEach(state.config?.resolvedDevices ?? [], id: \.id) { spec in
+                            ForEach(store.config?.resolvedDevices ?? [], id: \.id) { spec in
                                 Text(spec.label).tag(spec.id)
                             }
                         }
@@ -208,22 +190,22 @@ struct PreviewPanel: View {
 
     private var previewDeviceBinding: Binding<String> {
         Binding(
-            get: { state.previewSpec?.id ?? "" },
-            set: { state.previewDeviceId = $0 }
+            get: { store.previewSpec?.id ?? "" },
+            set: { store.previewDeviceId = $0 }
         )
     }
 
     private var previewPlaceholderMessage: String {
-        if state.selectedSlotIndex == nil {
+        if store.selectedSlotIndex == nil {
             return "Select a screenshot slot to preview"
         }
-        if state.config?.devices.isEmpty ?? true {
+        if store.config?.devices.isEmpty ?? true {
             return "Select at least one device to preview"
         }
-        if let index = state.selectedSlotIndex,
-           let config = state.config,
+        if let index = store.selectedSlotIndex,
+           let config = store.config,
            index < config.screenshots.count,
-           !state.rawImageExists(for: config.screenshots[index]) {
+           !store.rawImageExists(for: config.screenshots[index]) {
             return "Add a raw image to this slot to preview"
         }
         return "No preview available"
@@ -276,32 +258,32 @@ extension View {
 // MARK: - Log Panel
 
 struct LogPanelContent: View {
-    @Environment(ProjectState.self) private var state
+    @Environment(ProjectStore.self) private var store
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Spacer()
-                if state.isGenerating {
+                if store.isGenerating {
                     ProgressView()
                         .controlSize(.small)
                 }
                 Button {
-                    state.logOutput = ""
+                    store.logOutput = ""
                 } label: {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.plain)
-                .disabled(state.isGenerating)
+                .disabled(store.isGenerating)
                 .help("Clear log")
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
 
             ScrollView {
-                Text(state.logOutput.isEmpty ? "No output yet" : state.logOutput)
+                Text(store.logOutput.isEmpty ? "No output yet" : store.logOutput)
                     .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(state.logOutput.isEmpty ? .secondary : .primary)
+                    .foregroundStyle(store.logOutput.isEmpty ? .secondary : .primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(8)
                     .textSelection(.enabled)
