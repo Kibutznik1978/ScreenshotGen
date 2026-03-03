@@ -13,6 +13,7 @@ final class ProjectStore {
     var isGenerating = false
     var errorMessage: String?
     var previewDeviceId: String?
+    var imageRevision: Int = 0
 
     private var saveTask: Task<Void, Never>?
     private let selectedProjectKey = "ScreenshotGenUI.selectedProjectId"
@@ -236,6 +237,7 @@ final class ProjectStore {
                 try fm.removeItem(at: destURL)
             }
             try fm.copyItem(at: sourceURL, to: destURL)
+            imageRevision += 1
         } catch {
             errorMessage = "Failed to copy \(sourceURL.lastPathComponent): \(error.localizedDescription)"
         }

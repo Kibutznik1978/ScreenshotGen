@@ -5,10 +5,12 @@ import ScreenshotGenCore
 
 struct SlotListView: View {
     @Environment(ProjectStore.self) private var store
+    @State private var isDropTargeted = false
 
     var body: some View {
         @Bindable var store = store
 
+        let _ = store.imageRevision // trigger re-render on image import
         List(selection: $store.selectedSlotIndex) {
             if let config = store.config {
                 ForEach(Array(config.screenshots.enumerated()), id: \.element.id) { index, entry in
@@ -24,6 +26,17 @@ struct SlotListView: View {
             }
         }
         .listStyle(.sidebar)
+        .overlay {
+            if isDropTargeted {
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.accentColor, lineWidth: 2)
+                    .background(Color.accentColor.opacity(0.1))
+                    .allowsHitTesting(false)
+            }
+        }
+        .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+            handleBulkDrop(providers: providers)
+        }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 Divider()
@@ -59,6 +72,7 @@ struct SlotListView: View {
         .navigationTitle("Screenshots")
     }
 
+    // Drop onto a specific slot
     private func handleDrop(providers: [NSItemProvider], slotIndex: Int) -> Bool {
         guard let provider = providers.first else { return false }
         provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { data, _ in
@@ -72,6 +86,53 @@ struct SlotListView: View {
         }
         return true
     }
+
+    // Drop onto the whole list area — auto-assign to slots, creating new ones if needed
+    private func handleBulkDrop(providers: [NSItemProvider]) -> Bool {
+        let imageExtensions: Set<String> = ["png", "jpg", "jpeg", "heic"]
+        var urls: [URL] = []
+
+        let group = DispatchGroup()
+        for provider in providers {
+            group.enter()
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { data, _ in
+                defer { group.leave() }
+                guard let data = data as? Data,
+                      let url = URL(dataRepresentation: data, relativeTo: nil),
+                      imageExtensions.contains(url.pathExtension.lowercased()) else { return }
+                urls.append(url)
+            }
+        }
+
+        group.notify(queue: .main) {
+            let sortedURLs = urls.sorted { $0.lastPathComponent < $1.lastPathComponent }
+            for url in sortedURLs {
+                // Find first empty slot, or create a new one
+                let targetIndex = self.nextEmptySlotIndex() ?? self.createSlotAndReturnIndex()
+                if let targetIndex {
+                    store.importImage(from: url, toSlotIndex: targetIndex)
+                }
+            }
+        }
+
+        return !providers.isEmpty
+    }
+
+    private func nextEmptySlotIndex() -> Int? {
+        guard let config = store.config else { return nil }
+        for (index, entry) in config.screenshots.enumerated() {
+            if !store.rawImageExists(for: entry) {
+                return index
+            }
+        }
+        return nil
+    }
+
+    private func createSlotAndReturnIndex() -> Int? {
+        store.addSlot()
+        guard let config = store.config else { return nil }
+        return config.screenshots.count - 1
+    }
 }
 
 struct SlotRow: View {
@@ -81,7 +142,6 @@ struct SlotRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            // Thumbnail or placeholder
             Group {
                 if let thumbnail {
                     Image(nsImage: thumbnail)

@@ -5,7 +5,7 @@ CONTENTS_DIR = $(APP_BUNDLE)/Contents
 MACOS_DIR = $(CONTENTS_DIR)/MacOS
 RESOURCES_DIR = $(CONTENTS_DIR)/Resources
 
-.PHONY: app clean xcodegen
+.PHONY: app run clean xcodegen
 
 app:
 	swift build -c release --product ScreenshotGenUI
@@ -34,6 +34,10 @@ app:
 	iconutil -c icns $(BUILD_DIR)/AppIcon.iconset -o $(RESOURCES_DIR)/AppIcon.icns
 	rm -rf $(BUILD_DIR)/AppIcon.iconset
 	@echo "Built $(APP_BUNDLE)"
+
+run: app
+	@pkill -f "$(APP_NAME).app" 2>/dev/null || true
+	@open $(APP_BUNDLE)
 
 xcodegen:
 	xcodegen generate
