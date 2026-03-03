@@ -5,7 +5,7 @@ import ImageIO
 import UniformTypeIdentifiers
 
 @MainActor
-func exportPNG(view: some View, spec: DeviceSpec, to url: URL) throws {
+public func exportPNG(view: some View, spec: DeviceSpec, to url: URL) throws {
     let renderer = ImageRenderer(content: view.frame(
         width: spec.canvasWidth,
         height: spec.canvasHeight
@@ -61,7 +61,7 @@ func exportPNG(view: some View, spec: DeviceSpec, to url: URL) throws {
     }
 }
 
-enum ExportError: LocalizedError {
+public enum ExportError: LocalizedError {
     case renderFailed
     case unexpectedSize(expected: String, got: String)
     case contextCreationFailed
@@ -69,7 +69,7 @@ enum ExportError: LocalizedError {
     case fileCreationFailed
     case writeFailed
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .renderFailed:
             "ImageRenderer failed to produce a CGImage"

@@ -83,6 +83,38 @@ Output/
 swift run ScreenshotGen path/to/my-config.json
 ```
 
+## UI App (ScreenshotGenUI)
+
+A macOS SwiftUI app that wraps the generator so you don't need to manually rename screenshots or edit config.json by hand.
+
+### Build & Run
+
+```bash
+swift build --product ScreenshotGenUI
+# or run directly:
+swift run ScreenshotGenUI
+```
+
+You can also open the package in Xcode (`open Package.swift`), select the **ScreenshotGenUI** scheme, and run.
+
+### Features
+
+- **Load config.json** — On launch, select your project folder (the one containing `config.json`, `RawScreenshots/`, and `Output/`). The app remembers the folder between launches.
+- **Screenshot slots** — See all screenshot entries from config with status indicators (green = raw image present, red = missing) and thumbnails.
+- **Import screenshots** — Select a folder of images. Auto-assign by creation date or manually assign per slot. Images are copied into `RawScreenshots/` with the correct filenames.
+- **Edit captions & colors** — Edit caption, support text per slot. Edit gradient colors with native color pickers. Changes are saved back to `config.json`.
+- **Generate** — Runs the generator and streams log output. Opens the `Output/` folder on completion.
+
+## Architecture
+
+The project has three targets:
+
+| Target | Type | Description |
+|--------|------|-------------|
+| `ScreenshotGenCore` | Library | Shared types (Config, DeviceSpec, views) and generator logic |
+| `ScreenshotGen` | CLI | Thin wrapper that calls ScreenshotGenCore |
+| `ScreenshotGenUI` | macOS App | SwiftUI app that wraps the generator |
+
 ## Requirements
 
 - macOS 14+

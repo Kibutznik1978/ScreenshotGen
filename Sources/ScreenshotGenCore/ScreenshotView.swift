@@ -1,13 +1,20 @@
 import SwiftUI
 import AppKit
 
-struct ScreenshotView: View {
+public struct ScreenshotView: View {
     let entry: ScreenshotEntry
     let screenshot: NSImage
     let spec: DeviceSpec
     let config: GeneratorConfig
 
-    var body: some View {
+    public init(entry: ScreenshotEntry, screenshot: NSImage, spec: DeviceSpec, config: GeneratorConfig) {
+        self.entry = entry
+        self.screenshot = screenshot
+        self.spec = spec
+        self.config = config
+    }
+
+    public var body: some View {
         ZStack {
             // Background gradient
             LinearGradient(
