@@ -4,7 +4,20 @@ App Store screenshot generator. Takes raw simulator screenshots, wraps them in d
 
 All customization happens in a single `config.json` file — no Swift code editing needed.
 
-## Quick Start
+## Quick Start — GUI
+
+```bash
+swift run ScreenshotGenUI
+```
+
+The app opens a window with three panels:
+- **Sidebar** — add, remove, and reorder screenshot entries
+- **Preview** — live preview of the selected screenshot with device frame
+- **Inspector** — edit caption, support text, pick images, change gradient and text colors
+
+Use the toolbar to switch device preview, save `config.json`, or export all screenshots.
+
+## Quick Start — CLI
 
 ```bash
 # 1. Clone the repo

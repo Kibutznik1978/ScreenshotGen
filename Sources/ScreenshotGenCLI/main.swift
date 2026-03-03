@@ -1,7 +1,9 @@
 import Foundation
 import AppKit
+import ScreenshotGenCore
 
 let packageDir = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent() // ScreenshotGenCLI/
     .deletingLastPathComponent() // Sources/
     .deletingLastPathComponent() // ScreenshotGen/
 

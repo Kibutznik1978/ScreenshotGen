@@ -1,37 +1,39 @@
 import SwiftUI
 import AppKit
 
-enum DeviceSpec: String, CaseIterable {
+public enum DeviceSpec: String, CaseIterable, Identifiable {
     case iPhone6_7 = "iphone-6.7"
     case iPad12_9 = "ipad-12.9"
 
-    static func from(_ string: String) -> DeviceSpec? {
+    public var id: String { rawValue }
+
+    public static func from(_ string: String) -> DeviceSpec? {
         DeviceSpec(rawValue: string)
     }
 
     // Canvas dimensions in points (rendered at 3x for final pixel size)
-    var canvasWidth: CGFloat {
+    public var canvasWidth: CGFloat {
         switch self {
         case .iPhone6_7: return 430    // 1290 / 3
         case .iPad12_9: return 682.67  // 2048 / 3
         }
     }
 
-    var canvasHeight: CGFloat {
+    public var canvasHeight: CGFloat {
         switch self {
         case .iPhone6_7: return 932    // 2796 / 3
         case .iPad12_9: return 910.67  // 2732 / 3
         }
     }
 
-    var pixelWidth: Int {
+    public var pixelWidth: Int {
         switch self {
         case .iPhone6_7: return 1290
         case .iPad12_9: return 2048
         }
     }
 
-    var pixelHeight: Int {
+    public var pixelHeight: Int {
         switch self {
         case .iPhone6_7: return 2796
         case .iPad12_9: return 2732
@@ -39,49 +41,49 @@ enum DeviceSpec: String, CaseIterable {
     }
 
     // Device frame dimensions
-    var frameWidth: CGFloat {
+    public var frameWidth: CGFloat {
         switch self {
         case .iPhone6_7: return 340
         case .iPad12_9: return 520
         }
     }
 
-    var frameAspectRatio: CGFloat {
+    public var frameAspectRatio: CGFloat {
         switch self {
         case .iPhone6_7: return 2.167  // 2796/1290
         case .iPad12_9: return 1.334   // 2732/2048
         }
     }
 
-    var outerCornerRadius: CGFloat {
+    public var outerCornerRadius: CGFloat {
         switch self {
         case .iPhone6_7: return 50
         case .iPad12_9: return 36
         }
     }
 
-    var innerCornerRadius: CGFloat {
+    public var innerCornerRadius: CGFloat {
         switch self {
         case .iPhone6_7: return 41
         case .iPad12_9: return 28
         }
     }
 
-    var bezelInset: CGFloat {
+    public var bezelInset: CGFloat {
         switch self {
         case .iPhone6_7: return 12
         case .iPad12_9: return 14
         }
     }
 
-    var hasDynamicIsland: Bool {
+    public var hasDynamicIsland: Bool {
         switch self {
         case .iPhone6_7: return true
         case .iPad12_9: return false
         }
     }
 
-    var label: String {
+    public var label: String {
         switch self {
         case .iPhone6_7: return "iPhone 6.7\""
         case .iPad12_9: return "iPad 12.9\""
@@ -89,9 +91,14 @@ enum DeviceSpec: String, CaseIterable {
     }
 }
 
-struct DeviceFrame: View {
+public struct DeviceFrame: View {
     let screenshot: NSImage
     let spec: DeviceSpec
+
+    public init(screenshot: NSImage, spec: DeviceSpec) {
+        self.screenshot = screenshot
+        self.spec = spec
+    }
 
     private var frameHeight: CGFloat {
         spec.frameWidth * spec.frameAspectRatio
@@ -105,7 +112,7 @@ struct DeviceFrame: View {
         frameHeight - spec.bezelInset * 2
     }
 
-    var body: some View {
+    public var body: some View {
         ZStack {
             // Outer device frame
             RoundedRectangle(cornerRadius: spec.outerCornerRadius)
