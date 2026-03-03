@@ -38,36 +38,41 @@ struct ContentView: View {
             }
         }
         .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .navigation) {
                 Button {
                     state.selectProjectFolder()
                 } label: {
-                    Label("Project Folder", systemImage: "folder")
+                    Label("Open Project", systemImage: "folder")
                 }
-                .help("Select project folder")
+                .help("Open project folder")
+            }
 
+            ToolbarItemGroup(placement: .primaryAction) {
                 if state.config != nil {
-                    Button {
+                    Button("Import Images") {
                         showImportSheet = true
-                    } label: {
-                        Label("Import", systemImage: "square.and.arrow.down")
                     }
-                    .help("Import screenshots")
+                    .help("Import screenshot images")
 
-                    Button {
+                    Button("Save") {
                         state.saveConfig()
-                    } label: {
-                        Label("Save Config", systemImage: "square.and.arrow.down.on.square")
                     }
                     .help("Save config.json")
 
                     Button {
                         state.runGenerate()
                     } label: {
-                        Label("Generate", systemImage: "gearshape")
+                        if state.isGenerating {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Label("Generate", systemImage: "play.fill")
+                        }
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
                     .disabled(state.isGenerating)
-                    .help("Generate screenshots")
+                    .help("Generate App Store screenshots")
                 }
             }
         }

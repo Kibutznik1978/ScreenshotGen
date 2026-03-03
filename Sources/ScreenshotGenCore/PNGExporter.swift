@@ -10,7 +10,7 @@ public func exportPNG(view: some View, spec: DeviceSpec, to url: URL) throws {
         width: spec.canvasWidth,
         height: spec.canvasHeight
     ))
-    renderer.scale = 3.0
+    renderer.scale = spec.renderScale
 
     guard let cgImage = renderer.cgImage else {
         throw ExportError.renderFailed

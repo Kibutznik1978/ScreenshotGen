@@ -31,7 +31,7 @@ public func generate(
     try fm.createDirectory(at: outputDir, withIntermediateDirectories: true)
 
     for device in devices {
-        let deviceDir = outputDir.appendingPathComponent(device.rawValue)
+        let deviceDir = outputDir.appendingPathComponent(device.id)
         try fm.createDirectory(at: deviceDir, withIntermediateDirectories: true)
     }
 
@@ -66,15 +66,15 @@ public func generate(
                 config: config
             )
 
-            let deviceDir = outputDir.appendingPathComponent(device.rawValue)
+            let deviceDir = outputDir.appendingPathComponent(device.id)
             let outputURL = deviceDir.appendingPathComponent("\(entry.id)-screenshot.png")
 
             do {
                 try exportPNG(view: view, spec: device, to: outputURL)
-                logger("✅ \(device.rawValue)/\(entry.id)-screenshot.png")
+                logger("✅ \(device.id)/\(entry.id)-screenshot.png")
                 generated += 1
             } catch {
-                logger("❌ \(device.rawValue)/\(entry.id): \(error.localizedDescription)")
+                logger("❌ \(device.id)/\(entry.id): \(error.localizedDescription)")
                 skipped += 1
             }
         }
@@ -96,7 +96,7 @@ public enum GeneratorError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .noValidDevices:
-            "No valid devices in config. Use: \(DeviceSpec.allCases.map(\.rawValue).joined(separator: ", "))"
+            "No valid devices in config. Use: \(DeviceSpec.allSpecs.map(\.id).joined(separator: ", "))"
         case .noScreenshots:
             "No screenshots defined in config."
         }

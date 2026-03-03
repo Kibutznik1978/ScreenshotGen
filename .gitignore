@@ -3,4 +3,5 @@
 Output/*.png
 Output/**/*.png
 RawScreenshots/*.png
+config.json
 .DS_Store

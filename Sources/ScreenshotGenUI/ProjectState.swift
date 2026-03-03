@@ -82,6 +82,36 @@ final class ProjectState {
         return NSImage(contentsOf: url)
     }
 
+    // MARK: - Add / Remove Slots
+
+    func addSlot() {
+        guard config != nil else { return }
+        let nextNumber = (config!.screenshots.count + 1)
+        let id = String(format: "%02d", nextNumber)
+        let entry = ScreenshotEntry(
+            id: id,
+            rawImage: "\(id)-screenshot.png",
+            caption: "Your headline\ngoes here",
+            supportText: "A subtitle explaining the feature"
+        )
+        config!.screenshots.append(entry)
+        selectedSlotIndex = config!.screenshots.count - 1
+    }
+
+    func removeSlot(at index: Int) {
+        guard var screenshots = config?.screenshots,
+              index >= 0, index < screenshots.count else { return }
+        screenshots.remove(at: index)
+        config?.screenshots = screenshots
+
+        // Adjust selection
+        if screenshots.isEmpty {
+            selectedSlotIndex = nil
+        } else if let selected = selectedSlotIndex, selected >= screenshots.count {
+            selectedSlotIndex = screenshots.count - 1
+        }
+    }
+
     // MARK: - Import
 
     func importImages(from sourceURLs: [URL], assignments: [Int: URL]) {

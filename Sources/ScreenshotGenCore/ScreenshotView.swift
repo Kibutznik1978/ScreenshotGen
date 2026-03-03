@@ -14,6 +14,11 @@ public struct ScreenshotView: View {
         self.config = config
     }
 
+    /// Scale factor relative to the 430pt reference (iPhone 6.7" 1290px)
+    private var scaleFactor: CGFloat {
+        spec.canvasWidth / 430.0
+    }
+
     public var body: some View {
         ZStack {
             // Background gradient
@@ -25,11 +30,11 @@ public struct ScreenshotView: View {
 
             VStack(spacing: 8) {
                 Spacer()
-                    .frame(height: topSpacing)
+                    .frame(height: round(50 * scaleFactor))
 
                 // Caption
                 Text(entry.caption)
-                    .font(.system(size: captionFontSize, weight: .bold))
+                    .font(.system(size: round(30 * scaleFactor), weight: .bold))
                     .foregroundStyle(config.text)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
@@ -37,7 +42,7 @@ public struct ScreenshotView: View {
 
                 // Support line
                 Text(entry.supportText)
-                    .font(.system(size: supportFontSize, weight: .medium))
+                    .font(.system(size: round(17 * scaleFactor), weight: .medium))
                     .foregroundStyle(config.text.opacity(config.resolvedSupportTextOpacity))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -50,38 +55,9 @@ public struct ScreenshotView: View {
                 DeviceFrame(screenshot: screenshot, spec: spec)
 
                 Spacer()
-                    .frame(height: bottomSpacing)
+                    .frame(height: round(20 * scaleFactor))
             }
         }
         .frame(width: spec.canvasWidth, height: spec.canvasHeight)
-    }
-
-    // Scale text and spacing based on device
-    private var captionFontSize: CGFloat {
-        switch spec {
-        case .iPhone6_7: return 30
-        case .iPad12_9: return 38
-        }
-    }
-
-    private var supportFontSize: CGFloat {
-        switch spec {
-        case .iPhone6_7: return 17
-        case .iPad12_9: return 22
-        }
-    }
-
-    private var topSpacing: CGFloat {
-        switch spec {
-        case .iPhone6_7: return 50
-        case .iPad12_9: return 40
-        }
-    }
-
-    private var bottomSpacing: CGFloat {
-        switch spec {
-        case .iPhone6_7: return 20
-        case .iPad12_9: return 20
-        }
     }
 }

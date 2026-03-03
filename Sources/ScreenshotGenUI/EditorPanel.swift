@@ -18,6 +18,10 @@ struct EditorPanel: View {
 
                 Divider()
 
+                deviceSelector
+
+                Divider()
+
                 colorEditor
             }
             .padding(20)
@@ -52,10 +56,9 @@ struct EditorPanel: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Caption")
                     .font(.subheadline.bold())
-                TextEditor(text: captionBinding(index: index))
-                    .font(.body)
-                    .frame(height: 60)
-                    .border(.quaternary)
+                TextField("Caption", text: captionBinding(index: index), axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .lineLimit(2...5)
                 Text("Use line breaks for multi-line captions")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -80,6 +83,54 @@ struct EditorPanel: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .shadow(radius: 2)
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var deviceSelector: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Devices")
+                .font(.title2.bold())
+
+            if state.config != nil {
+                HStack(alignment: .top, spacing: 24) {
+                    deviceCategoryList("iPhone", categories: DisplayCategory.iPhoneCategories)
+                    deviceCategoryList("iPad", categories: DisplayCategory.iPadCategories)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func deviceCategoryList(_ platform: String, categories: [DisplayCategory]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(platform)
+                .font(.headline)
+                .padding(.top, 4)
+
+            ForEach(categories) { category in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(category.name)
+                        .font(.subheadline.bold())
+                    Text(category.devices)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    ForEach(category.specs) { spec in
+                        Toggle(isOn: deviceToggle(for: spec.id)) {
+                            HStack(spacing: 6) {
+                                Text("\(spec.pixelWidth)x\(spec.pixelHeight)")
+                                    .font(.body.monospacedDigit())
+                                Text(spec.deviceName)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .toggleStyle(.checkbox)
+                    }
+                }
+                .padding(.bottom, 4)
             }
         }
     }
@@ -133,6 +184,24 @@ struct EditorPanel: View {
     }
 
     // MARK: - Bindings
+
+    private func deviceToggle(for deviceId: String) -> Binding<Bool> {
+        Binding(
+            get: {
+                state.config?.devices.contains(deviceId) ?? false
+            },
+            set: { isOn in
+                guard state.config != nil else { return }
+                if isOn {
+                    if !state.config!.devices.contains(deviceId) {
+                        state.config!.devices.append(deviceId)
+                    }
+                } else {
+                    state.config!.devices.removeAll { $0 == deviceId }
+                }
+            }
+        )
+    }
 
     private func captionBinding(index: Int) -> Binding<String> {
         Binding(
