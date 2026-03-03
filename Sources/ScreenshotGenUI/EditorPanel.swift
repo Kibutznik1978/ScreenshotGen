@@ -111,11 +111,16 @@ struct EditorPanel: View {
 
             ForEach(categories) { category in
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(category.name)
-                        .font(.subheadline.bold())
-                    Text(category.devices)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        categoryToggleButton(for: category)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(category.name)
+                                .font(.subheadline.bold())
+                            Text(category.devices)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
 
                     ForEach(category.specs) { spec in
                         Toggle(isOn: deviceToggle(for: spec.id)) {
@@ -179,6 +184,52 @@ struct EditorPanel: View {
                         .frame(width: 90)
                         .monospacedDigit()
                 }
+            }
+        }
+    }
+
+    // MARK: - Category Toggle
+
+    private enum CategorySelection {
+        case all, some, none
+    }
+
+    private func categorySelection(for category: DisplayCategory) -> CategorySelection {
+        guard let devices = state.config?.devices else { return .none }
+        let specIds = category.specs.map(\.id)
+        let selectedCount = specIds.filter { devices.contains($0) }.count
+        if selectedCount == specIds.count { return .all }
+        if selectedCount > 0 { return .some }
+        return .none
+    }
+
+    @ViewBuilder
+    private func categoryToggleButton(for category: DisplayCategory) -> some View {
+        let selection = categorySelection(for: category)
+        Button {
+            toggleCategory(category)
+        } label: {
+            Image(systemName: selection == .all ? "checkmark.square.fill" :
+                             selection == .some ? "minus.square.fill" : "square")
+                .foregroundStyle(selection == .none ? .secondary : .primary)
+                .imageScale(.large)
+        }
+        .buttonStyle(.plain)
+        .help(selection == .all ? "Deselect all \(category.name)" : "Select all \(category.name)")
+    }
+
+    private func toggleCategory(_ category: DisplayCategory) {
+        guard state.config != nil else { return }
+        let selection = categorySelection(for: category)
+        let specIds = category.specs.map(\.id)
+
+        if selection == .all {
+            // Deselect all in this category
+            state.config!.devices.removeAll { specIds.contains($0) }
+        } else {
+            // Select all in this category
+            for id in specIds where !state.config!.devices.contains(id) {
+                state.config!.devices.append(id)
             }
         }
     }

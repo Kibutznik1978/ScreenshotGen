@@ -8,45 +8,49 @@ struct SlotListView: View {
     var body: some View {
         @Bindable var state = state
 
-        VStack(spacing: 0) {
-            List(selection: $state.selectedSlotIndex) {
-                if let config = state.config {
-                    ForEach(Array(config.screenshots.enumerated()), id: \.offset) { index, entry in
-                        SlotRow(entry: entry, exists: state.rawImageExists(for: entry), thumbnail: state.thumbnail(for: entry))
-                            .tag(index)
-                    }
+        List(selection: $state.selectedSlotIndex) {
+            if let config = state.config {
+                ForEach(Array(config.screenshots.enumerated()), id: \.element.id) { index, entry in
+                    SlotRow(entry: entry, exists: state.rawImageExists(for: entry), thumbnail: state.thumbnail(for: entry))
+                        .tag(index)
+                }
+                .onMove { source, destination in
+                    state.moveSlot(from: source, to: destination)
                 }
             }
-            .listStyle(.sidebar)
-
-            Divider()
-
-            HStack(spacing: 0) {
-                Button {
-                    state.addSlot()
-                } label: {
-                    Image(systemName: "plus")
-                        .frame(width: 28, height: 22)
-                }
-                .buttonStyle(.borderless)
-                .help("Add screenshot slot")
-
-                Button {
-                    if let index = state.selectedSlotIndex {
-                        state.removeSlot(at: index)
+        }
+        .listStyle(.sidebar)
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 0) {
+                Divider()
+                HStack(spacing: 0) {
+                    Button {
+                        state.addSlot()
+                    } label: {
+                        Image(systemName: "plus")
+                            .frame(width: 28, height: 22)
                     }
-                } label: {
-                    Image(systemName: "minus")
-                        .frame(width: 28, height: 22)
-                }
-                .buttonStyle(.borderless)
-                .disabled(state.selectedSlotIndex == nil)
-                .help("Remove selected slot")
+                    .buttonStyle(.borderless)
+                    .help("Add screenshot slot")
 
-                Spacer()
+                    Button {
+                        if let index = state.selectedSlotIndex {
+                            state.removeSlot(at: index)
+                        }
+                    } label: {
+                        Image(systemName: "minus")
+                            .frame(width: 28, height: 22)
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(state.selectedSlotIndex == nil)
+                    .help("Remove selected slot")
+
+                    Spacer()
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .background(.bar)
         }
         .navigationTitle("Screenshots")
     }

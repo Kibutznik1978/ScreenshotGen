@@ -5,6 +5,9 @@ import PackageDescription
 let package = Package(
     name: "ScreenshotGen",
     platforms: [.macOS(.v14)],
+    products: [
+        .library(name: "ScreenshotGenCore", targets: ["ScreenshotGenCore"]),
+    ],
     targets: [
         .target(
             name: "ScreenshotGenCore",
@@ -18,7 +21,8 @@ let package = Package(
         .executableTarget(
             name: "ScreenshotGenUI",
             dependencies: ["ScreenshotGenCore"],
-            path: "Sources/ScreenshotGenUI"
+            path: "Sources/ScreenshotGenUI",
+            exclude: ["Info.plist", "ScreenshotGenUI.entitlements", "Assets.xcassets"]
         ),
     ]
 )

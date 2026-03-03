@@ -3,18 +3,20 @@ import AppKit
 
 /// Runs the screenshot generator for a given project directory and config.
 /// - Parameters:
-///   - projectDir: Root directory containing RawScreenshots/, Output/, and config.json
+///   - projectDir: Root directory containing RawScreenshots/ and config.json
 ///   - config: The parsed generator configuration
+///   - outputDir: Optional output directory. If nil, defaults to projectDir/Output
 ///   - logger: Closure called with log messages (e.g. print or UI text view append)
 /// - Returns: Tuple of (generated count, skipped count)
 @MainActor
 public func generate(
     projectDir: URL,
     config: GeneratorConfig,
+    outputDir: URL? = nil,
     logger: @escaping (String) -> Void
 ) throws -> (generated: Int, skipped: Int) {
     let rawDir = projectDir.appendingPathComponent("RawScreenshots")
-    let outputDir = projectDir.appendingPathComponent("Output")
+    let outputDir = outputDir ?? projectDir.appendingPathComponent("Output")
     let fm = FileManager.default
 
     let devices = config.resolvedDevices

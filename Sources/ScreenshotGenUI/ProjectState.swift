@@ -12,6 +12,7 @@ final class ProjectState {
     var logOutput: String = ""
     var isGenerating = false
     var errorMessage: String?
+    var previewDeviceId: String?
 
     private let projectDirKey = "ScreenshotGenUI.projectDir"
 
@@ -33,6 +34,14 @@ final class ProjectState {
 
     var outputDir: URL? {
         projectDir?.appendingPathComponent("Output")
+    }
+
+    var previewSpec: DeviceSpec? {
+        if let id = previewDeviceId, let spec = DeviceSpec.from(id) {
+            return spec
+        }
+        // Fall back to first selected device
+        return config?.devices.compactMap({ DeviceSpec.from($0) }).first
     }
 
     // MARK: - Load / Save
@@ -96,6 +105,23 @@ final class ProjectState {
         )
         config!.screenshots.append(entry)
         selectedSlotIndex = config!.screenshots.count - 1
+    }
+
+    func moveSlot(from source: IndexSet, to destination: Int) {
+        guard config != nil else { return }
+        config!.screenshots.move(fromOffsets: source, toOffset: destination)
+
+        // Adjust selection to follow the moved item
+        if let selected = selectedSlotIndex, let sourceIndex = source.first {
+            if sourceIndex == selected {
+                // The selected item was moved
+                selectedSlotIndex = sourceIndex < destination ? destination - 1 : destination
+            } else if sourceIndex < selected && destination > selected {
+                selectedSlotIndex = selected - 1
+            } else if sourceIndex > selected && destination <= selected {
+                selectedSlotIndex = selected + 1
+            }
+        }
     }
 
     func removeSlot(at index: Int) {
@@ -166,18 +192,32 @@ final class ProjectState {
 
     func runGenerate() {
         guard let projectDir, let config else { return }
+
+        // Ask user where to save output
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+        panel.message = "Choose where to save generated screenshots"
+        panel.prompt = "Save Here"
+
+        // Default to the project's Output folder
+        if let outputDir {
+            panel.directoryURL = outputDir
+        }
+
+        guard panel.runModal() == .OK, let chosenDir = panel.url else { return }
+
         isGenerating = true
         logOutput = ""
 
         Task { @MainActor in
             do {
-                _ = try generate(projectDir: projectDir, config: config) { [weak self] line in
+                _ = try generate(projectDir: projectDir, config: config, outputDir: chosenDir) { [weak self] line in
                     self?.logOutput += line + "\n"
                 }
-                // Open output folder
-                if let outputDir {
-                    NSWorkspace.shared.open(outputDir)
-                }
+                NSWorkspace.shared.open(chosenDir)
             } catch {
                 logOutput += "\n❌ \(error.localizedDescription)\n"
             }

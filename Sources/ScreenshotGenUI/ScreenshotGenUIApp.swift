@@ -9,8 +9,11 @@ struct ScreenshotGenUIApp: App {
     init() {
         // When running as a bare executable (not a .app bundle),
         // macOS won't activate the app automatically — keyboard input won't work.
-        NSApplication.shared.setActivationPolicy(.regular)
-        NSApplication.shared.activate(ignoringOtherApps: true)
+        // In a proper .app bundle this is handled automatically.
+        if !Bundle.main.bundlePath.hasSuffix(".app") {
+            NSApplication.shared.setActivationPolicy(.regular)
+            NSApplication.shared.activate(ignoringOtherApps: true)
+        }
     }
 
     var body: some Scene {

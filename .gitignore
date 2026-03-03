@@ -1,5 +1,7 @@
 .build/
 .swiftpm/
+*.xcodeproj
+build/
 Output/*.png
 Output/**/*.png
 RawScreenshots/*.png

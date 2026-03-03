@@ -1,0 +1,33 @@
+name: ScreenshotGen
+options:
+  deploymentTarget:
+    macOS: "14.0"
+  bundleIdPrefix: com.screenshotgen
+  xcodeVersion: "16.0"
+
+packages:
+  ScreenshotGen:
+    path: .
+
+targets:
+  ScreenshotGenUI:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/ScreenshotGenUI
+        excludes:
+          - "Info.plist"
+          - "*.entitlements"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.screenshotgen.app
+        PRODUCT_NAME: ScreenshotGen
+        INFOPLIST_FILE: Sources/ScreenshotGenUI/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Sources/ScreenshotGenUI/ScreenshotGenUI.entitlements
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        SWIFT_VERSION: "5.10"
+        CODE_SIGN_IDENTITY: "-"
+        GENERATE_INFOPLIST_FILE: false
+    dependencies:
+      - package: ScreenshotGen
+        product: ScreenshotGenCore
