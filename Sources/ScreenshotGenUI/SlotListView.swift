@@ -25,7 +25,7 @@ struct SlotListView: View {
                 }
             }
         }
-        .listStyle(.sidebar)
+        .listStyle(.inset)
         .overlay {
             if isDropTargeted {
                 RoundedRectangle(cornerRadius: 8)
@@ -69,7 +69,6 @@ struct SlotListView: View {
             }
             .background(.bar)
         }
-        .navigationTitle("Screenshots")
     }
 
     // Drop onto a specific slot

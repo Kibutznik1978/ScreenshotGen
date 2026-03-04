@@ -34,7 +34,6 @@ struct ProjectListView: View {
             }
             .background(.bar)
         }
-        .navigationTitle("Projects")
         .onChange(of: store.selectedProjectId) {
             store.selectedSlotIndex = nil
         }

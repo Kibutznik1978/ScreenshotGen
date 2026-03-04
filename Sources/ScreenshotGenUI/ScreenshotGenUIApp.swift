@@ -20,5 +20,7 @@ struct ScreenshotGenUIApp: App {
                 .frame(minWidth: 900, minHeight: 600)
         }
         .windowResizability(.contentMinSize)
+        .windowStyle(.titleBar)
+        .windowToolbarStyle(.unified(showsTitle: false))
     }
 }

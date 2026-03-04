@@ -13,56 +13,15 @@ struct ContentView: View {
     @State private var bottomTab: BottomTab = .preview
 
     var body: some View {
-        NavigationSplitView {
-            ProjectListView()
-                .navigationSplitViewColumnWidth(min: 160, ideal: 180)
-        } content: {
-            if store.selectedProject != nil {
-                SlotListView()
-                    .navigationSplitViewColumnWidth(min: 220, ideal: 260)
-            } else {
-                Text("Select a project")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        } detail: {
-            VStack(spacing: 0) {
-                if store.selectedSlotIndex != nil {
-                    EditorPanel()
-                } else {
-                    Text("Select a screenshot slot")
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-
-                BottomPanel(tab: $bottomTab)
-                    .environment(store)
-            }
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                if store.config != nil {
-                    Button("Import Images") {
-                        showImportSheet = true
+        NavigationStack {
+            mainContent
+                .toolbarBackground(.visible, for: .windowToolbar)
+                .toolbar {
+                    ToolbarItemGroup(placement: .automatic) {
+                        Spacer()
+                        toolbarButtons
                     }
-                    .help("Import screenshot images")
-
-                    Button {
-                        store.runGenerate()
-                    } label: {
-                        if store.isGenerating {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Label("Generate", systemImage: "play.fill")
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                    .disabled(store.isGenerating)
-                    .help("Generate App Store screenshots")
                 }
-            }
         }
         .sheet(isPresented: $showImportSheet) {
             ImportView()
@@ -86,6 +45,70 @@ struct ContentView: View {
         }
         .onChange(of: store.selectedProjectId) {
             store.persistSelection()
+        }
+    }
+
+    private var mainContent: some View {
+        HStack(spacing: 0) {
+            ProjectListView()
+                .frame(width: 180)
+
+            Divider()
+
+            if store.selectedProject != nil {
+                SlotListView()
+                    .frame(width: 260)
+            } else {
+                Text("Select a project")
+                    .foregroundStyle(.secondary)
+                    .frame(maxHeight: .infinity)
+                    .frame(width: 260)
+            }
+
+            Divider()
+
+            detailColumn
+        }
+    }
+
+    private var detailColumn: some View {
+        VStack(spacing: 0) {
+            if store.selectedSlotIndex != nil {
+                EditorPanel()
+            } else {
+                Text("Select a screenshot slot")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            BottomPanel(tab: $bottomTab)
+                .environment(store)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private var toolbarButtons: some View {
+        if store.config != nil {
+            Button("Import Images") {
+                showImportSheet = true
+            }
+            .help("Import screenshot images")
+
+            Button {
+                store.runGenerate()
+            } label: {
+                if store.isGenerating {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Label("Generate", systemImage: "play.fill")
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+            .disabled(store.isGenerating)
+            .help("Generate App Store screenshots")
         }
     }
 }
@@ -171,6 +194,7 @@ struct PreviewPanel: View {
                     .padding(.top, 8)
                 }
                 .padding(.horizontal, 12)
+                .padding(.bottom, 12)
                 .sheet(isPresented: $showFullPreview) {
                     FullPreviewSheet(entry: config.screenshots[slotIndex], screenshot: screenshot, spec: spec, config: config)
                 }
