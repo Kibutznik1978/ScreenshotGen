@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 import ScreenshotGenCore
 
 struct ImportView: View {
-    @Environment(ProjectState.self) private var state
+    @Environment(ProjectStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
     @State private var sourceImages: [URL] = []
@@ -55,7 +55,7 @@ struct ImportView: View {
                     .pickerStyle(.segmented)
                     .onChange(of: mode) {
                         if mode == .auto {
-                            assignments = state.autoAssignByDate(images: sourceImages)
+                            assignments = store.autoAssignByDate(images: sourceImages)
                         } else {
                             assignments = [:]
                         }
@@ -67,7 +67,7 @@ struct ImportView: View {
 
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 8) {
-                            if let config = state.config {
+                            if let config = store.config {
                                 ForEach(Array(config.screenshots.enumerated()), id: \.offset) { index, entry in
                                     assignmentRow(index: index, entry: entry)
                                 }
@@ -85,7 +85,9 @@ struct ImportView: View {
             HStack {
                 Spacer()
                 Button("Import") {
-                    state.importImages(from: sourceImages, assignments: assignments)
+                    for (slotIndex, sourceURL) in assignments {
+                        store.importImage(from: sourceURL, toSlotIndex: slotIndex)
+                    }
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
@@ -173,7 +175,7 @@ struct ImportView: View {
         }
 
         if mode == .auto {
-            assignments = state.autoAssignByDate(images: sourceImages)
+            assignments = store.autoAssignByDate(images: sourceImages)
         }
     }
 }

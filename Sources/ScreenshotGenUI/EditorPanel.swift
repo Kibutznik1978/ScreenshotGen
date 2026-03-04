@@ -4,14 +4,15 @@ import UniformTypeIdentifiers
 import ScreenshotGenCore
 
 struct EditorPanel: View {
-    @Environment(ProjectState.self) private var state
+    @Environment(ProjectStore.self) private var store
 
     var body: some View {
-        @Bindable var state = state
+        @Bindable var store = store
+        let _ = store.imageRevision // trigger re-render on image import
 
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                if let index = state.selectedSlotIndex, let config = state.config,
+                if let index = store.selectedSlotIndex, let config = store.config,
                    index < config.screenshots.count {
                     slotEditor(index: index)
                 }
@@ -31,9 +32,9 @@ struct EditorPanel: View {
 
     @ViewBuilder
     private func slotEditor(index: Int) -> some View {
-        @Bindable var state = state
+        @Bindable var store = store
 
-        let entry = state.config!.screenshots[index]
+        let entry = store.config!.screenshots[index]
 
         VStack(alignment: .leading, spacing: 16) {
             Text("Slot \(entry.id)")
@@ -44,7 +45,7 @@ struct EditorPanel: View {
                     Text(entry.rawImage)
                         .foregroundStyle(.secondary)
                     Circle()
-                        .fill(state.rawImageExists(for: entry) ? .green : .red)
+                        .fill(store.rawImageExists(for: entry) ? .green : .red)
                         .frame(width: 8, height: 8)
 
                     Button("Choose File...") {
@@ -72,7 +73,7 @@ struct EditorPanel: View {
             }
 
             // Preview thumbnail
-            if let thumb = state.thumbnail(for: entry) {
+            if let thumb = store.thumbnail(for: entry) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Raw Image Preview")
                         .font(.subheadline.bold())
@@ -93,7 +94,7 @@ struct EditorPanel: View {
             Text("Devices")
                 .font(.title2.bold())
 
-            if state.config != nil {
+            if store.config != nil {
                 HStack(alignment: .top, spacing: 24) {
                     deviceCategoryList("iPhone", categories: DisplayCategory.iPhoneCategories)
                     deviceCategoryList("iPad", categories: DisplayCategory.iPadCategories)
@@ -146,7 +147,7 @@ struct EditorPanel: View {
             Text("Colors")
                 .font(.title2.bold())
 
-            if state.config != nil {
+            if store.config != nil {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     colorField(title: "Gradient Top", hexKeyPath: \.gradientTopColor)
                     colorField(title: "Gradient Bottom", hexKeyPath: \.gradientBottomColor)
@@ -157,7 +158,7 @@ struct EditorPanel: View {
                     Text("Support Text Opacity")
                         .font(.subheadline)
                     Slider(value: opacityBinding, in: 0...1, step: 0.05)
-                    Text(String(format: "%.0f%%", (state.config?.resolvedSupportTextOpacity ?? 0.8) * 100))
+                    Text(String(format: "%.0f%%", (store.config?.resolvedSupportTextOpacity ?? 0.8) * 100))
                         .monospacedDigit()
                         .frame(width: 40)
                 }
@@ -167,7 +168,7 @@ struct EditorPanel: View {
 
     @ViewBuilder
     private func colorField(title: String, hexKeyPath: WritableKeyPath<GeneratorConfig, String>) -> some View {
-        if state.config != nil {
+        if store.config != nil {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.caption)
@@ -195,7 +196,7 @@ struct EditorPanel: View {
     }
 
     private func categorySelection(for category: DisplayCategory) -> CategorySelection {
-        guard let devices = state.config?.devices else { return .none }
+        guard let devices = store.config?.devices else { return .none }
         let specIds = category.specs.map(\.id)
         let selectedCount = specIds.filter { devices.contains($0) }.count
         if selectedCount == specIds.count { return .all }
@@ -219,17 +220,15 @@ struct EditorPanel: View {
     }
 
     private func toggleCategory(_ category: DisplayCategory) {
-        guard state.config != nil else { return }
+        guard store.config != nil else { return }
         let selection = categorySelection(for: category)
         let specIds = category.specs.map(\.id)
 
         if selection == .all {
-            // Deselect all in this category
-            state.config!.devices.removeAll { specIds.contains($0) }
+            store.config!.devices.removeAll { specIds.contains($0) }
         } else {
-            // Select all in this category
-            for id in specIds where !state.config!.devices.contains(id) {
-                state.config!.devices.append(id)
+            for id in specIds where !store.config!.devices.contains(id) {
+                store.config!.devices.append(id)
             }
         }
     }
@@ -239,16 +238,16 @@ struct EditorPanel: View {
     private func deviceToggle(for deviceId: String) -> Binding<Bool> {
         Binding(
             get: {
-                state.config?.devices.contains(deviceId) ?? false
+                store.config?.devices.contains(deviceId) ?? false
             },
             set: { isOn in
-                guard state.config != nil else { return }
+                guard store.config != nil else { return }
                 if isOn {
-                    if !state.config!.devices.contains(deviceId) {
-                        state.config!.devices.append(deviceId)
+                    if !store.config!.devices.contains(deviceId) {
+                        store.config!.devices.append(deviceId)
                     }
                 } else {
-                    state.config!.devices.removeAll { $0 == deviceId }
+                    store.config!.devices.removeAll { $0 == deviceId }
                 }
             }
         )
@@ -257,11 +256,11 @@ struct EditorPanel: View {
     private func captionBinding(index: Int) -> Binding<String> {
         Binding(
             get: {
-                guard let config = state.config, index < config.screenshots.count else { return "" }
+                guard let config = store.config, index < config.screenshots.count else { return "" }
                 return config.screenshots[index].caption
             },
             set: { newValue in
-                state.config?.screenshots[index].caption = newValue
+                store.config?.screenshots[index].caption = newValue
             }
         )
     }
@@ -269,11 +268,11 @@ struct EditorPanel: View {
     private func supportTextBinding(index: Int) -> Binding<String> {
         Binding(
             get: {
-                guard let config = state.config, index < config.screenshots.count else { return "" }
+                guard let config = store.config, index < config.screenshots.count else { return "" }
                 return config.screenshots[index].supportText
             },
             set: { newValue in
-                state.config?.screenshots[index].supportText = newValue
+                store.config?.screenshots[index].supportText = newValue
             }
         )
     }
@@ -281,11 +280,11 @@ struct EditorPanel: View {
     private func colorBinding(for keyPath: WritableKeyPath<GeneratorConfig, String>) -> Binding<Color> {
         Binding(
             get: {
-                guard let config = state.config else { return .white }
+                guard let config = store.config else { return .white }
                 return Color(hex: config[keyPath: keyPath])
             },
             set: { newValue in
-                state.config?[keyPath: keyPath] = newValue.hexString
+                store.config?[keyPath: keyPath] = newValue.hexString
             }
         )
     }
@@ -293,18 +292,18 @@ struct EditorPanel: View {
     private func hexBinding(for keyPath: WritableKeyPath<GeneratorConfig, String>) -> Binding<String> {
         Binding(
             get: {
-                state.config?[keyPath: keyPath] ?? "#000000"
+                store.config?[keyPath: keyPath] ?? "#000000"
             },
             set: { newValue in
-                state.config?[keyPath: keyPath] = newValue
+                store.config?[keyPath: keyPath] = newValue
             }
         )
     }
 
     private var opacityBinding: Binding<Double> {
         Binding(
-            get: { state.config?.resolvedSupportTextOpacity ?? 0.8 },
-            set: { state.config?.supportTextOpacity = $0 }
+            get: { store.config?.resolvedSupportTextOpacity ?? 0.8 },
+            set: { store.config?.supportTextOpacity = $0 }
         )
     }
 
@@ -319,6 +318,6 @@ struct EditorPanel: View {
         panel.message = "Select a screenshot image"
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        state.importImages(from: [url], assignments: [index: url])
+        store.importImage(from: url, toSlotIndex: index)
     }
 }
